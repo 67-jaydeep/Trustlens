@@ -8,6 +8,9 @@ import { emotionDensitySignal } from "../signals/emotionDensity.signal.js";
 import { sensationalHeadlineSignal } from "../signals/sensationalHeadline.signal.js";
 import { claimSourceRatioSignal } from "../signals/claimSourceRatio.signal.js";
 import { readabilityPersuasionSignal } from "../signals/readabilityPersuasion.signal.js";
+import { contentOriginalitySignal } from "../signals/contentOriginality.signal.js";
+import { aiLikenessSignal } from "../signals/aiLikeness.signal.js";
+
 
 const POLL_INTERVAL_MS = 5000; // every 5 seconds
 
@@ -17,7 +20,9 @@ const signalFunctions = {
   emotion_density: emotionDensitySignal,
   sensational_headline: sensationalHeadlineSignal,
   claim_source_ratio: claimSourceRatioSignal,
-  readability_persuasion: readabilityPersuasionSignal
+  readability_persuasion: readabilityPersuasionSignal,
+  content_originality: contentOriginalitySignal,
+  ai_likeness_risk: aiLikenessSignal
 };
 
 export const startJobWorker = () => {

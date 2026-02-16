@@ -28,7 +28,7 @@ export const startJobWorker = () => {
       const job = await AnalysisJob.findOneAndUpdate(
         { status: "QUEUED" },
         { status: "PROCESSING" },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!job) return;

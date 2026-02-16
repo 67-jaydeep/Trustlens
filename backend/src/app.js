@@ -4,6 +4,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import analysisRoutes from "./routes/analysis.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import historyRoutes from "./routes/history.routes.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api", analysisRoutes);
 app.use("/api", reportRoutes);
+app.use("/api", historyRoutes);
 
 // Health check route
 app.get("/health", (req, res) => {

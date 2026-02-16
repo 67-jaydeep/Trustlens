@@ -11,8 +11,8 @@ import { readabilityPersuasionSignal } from "../signals/readabilityPersuasion.si
 import { contentOriginalitySignal } from "../signals/contentOriginality.signal.js";
 import { aiLikenessSignal } from "../signals/aiLikeness.signal.js";
 
-
-const POLL_INTERVAL_MS = 5000; // every 5 seconds
+const POLL_INTERVAL_MS = 5000;
+const PROCESSING_TIMEOUT_MS = 60 * 1000; // 1 minute
 
 // Map signal IDs to actual functions
 const signalFunctions = {
@@ -30,10 +30,32 @@ export const startJobWorker = () => {
 
   setInterval(async () => {
     try {
+      // 1️⃣ Recover stuck PROCESSING jobs
+      await AnalysisJob.updateMany(
+        {
+          status: "PROCESSING",
+          processingStartedAt: {
+            $lt: new Date(Date.now() - PROCESSING_TIMEOUT_MS)
+          }
+        },
+        {
+          $set: { status: "QUEUED" }
+        }
+      );
+
+      // 2️⃣ Atomically claim oldest queued job
       const job = await AnalysisJob.findOneAndUpdate(
         { status: "QUEUED" },
-        { status: "PROCESSING" },
-        { returnDocument: "after" }
+        {
+          $set: {
+            status: "PROCESSING",
+            processingStartedAt: new Date()
+          }
+        },
+        {
+          sort: { createdAt: 1 },
+          returnDocument: "after"
+        }
       );
 
       if (!job) return;
@@ -79,32 +101,49 @@ const processJob = async (job) => {
       }
     }
 
-    // Real aggregation using signal results
+    // 3️⃣ Aggregate safely (idempotent)
     const signalResults = await SignalResult.find({
-    jobId: job._id,
-    status: "COMPLETED"
+      jobId: job._id,
+      status: "COMPLETED"
     });
 
     const aggregation = aggregateSignals(signalResults);
 
-    await AggregatedResult.create({
-    jobId: job._id,
-    overallRiskBand: aggregation.overallRiskBand,
-    overallScore: aggregation.overallScore,
-    groupScores: aggregation.groupScores,
-    conflicts: aggregation.conflicts,
-    notes: aggregation.notes
+    await AggregatedResult.findOneAndUpdate(
+      { jobId: job._id },
+      {
+        jobId: job._id,
+        overallRiskBand: aggregation.overallRiskBand,
+        overallScore: aggregation.overallScore,
+        groupScores: aggregation.groupScores,
+        conflicts: aggregation.conflicts,
+        notes: aggregation.notes
+      },
+      { upsert: true }
+    );
+
+    // 4️⃣ Determine final job status
+    const failedSignals = await SignalResult.countDocuments({
+      jobId: job._id,
+      status: "FAILED"
     });
 
-    job.status = "COMPLETED";
+    if (failedSignals > 0) {
+      job.status = "PARTIAL";
+    } else {
+      job.status = "COMPLETED";
+    }
+
     job.completedAt = new Date();
     await job.save();
 
-    console.log(`✅ Job ${job._id} completed`);
+    console.log(`✅ Job ${job._id} finished with status: ${job.status}`);
 
   } catch (error) {
+    console.error(`❌ Job ${job._id} fatal error`, error);
+
     job.status = "FAILED";
+    job.completedAt = new Date();
     await job.save();
-    console.error(`❌ Job ${job._id} failed`);
   }
 };

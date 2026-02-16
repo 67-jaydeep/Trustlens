@@ -1,6 +1,7 @@
 import { AnalysisJob } from "../models/AnalysisJob.js";
 import { SignalResult } from "../models/SignalResult.js";
 import { AggregatedResult } from "../models/AggregatedResult.js";
+import { aggregateSignals } from "../services/aggregation.service.js";
 
 import { structuralTransparencySignal } from "../signals/structuralTransparency.signal.js";
 import { emotionDensitySignal } from "../signals/emotionDensity.signal.js";
@@ -73,19 +74,21 @@ const processJob = async (job) => {
       }
     }
 
-    // Temporary static aggregation (will replace in Block 7)
+    // Real aggregation using signal results
+    const signalResults = await SignalResult.find({
+    jobId: job._id,
+    status: "COMPLETED"
+    });
+
+    const aggregation = aggregateSignals(signalResults);
+
     await AggregatedResult.create({
-      jobId: job._id,
-      overallRiskBand: "MEDIUM",
-      overallScore: 0.5,
-      groupScores: {
-        framing: 0.5,
-        evidence: 0.5,
-        production: 0.5,
-        persuasion: 0.5
-      },
-      conflicts: [],
-      notes: []
+    jobId: job._id,
+    overallRiskBand: aggregation.overallRiskBand,
+    overallScore: aggregation.overallScore,
+    groupScores: aggregation.groupScores,
+    conflicts: aggregation.conflicts,
+    notes: aggregation.notes
     });
 
     job.status = "COMPLETED";

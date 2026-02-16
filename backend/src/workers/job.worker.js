@@ -4,13 +4,19 @@ import { AggregatedResult } from "../models/AggregatedResult.js";
 
 import { structuralTransparencySignal } from "../signals/structuralTransparency.signal.js";
 import { emotionDensitySignal } from "../signals/emotionDensity.signal.js";
+import { sensationalHeadlineSignal } from "../signals/sensationalHeadline.signal.js";
+import { claimSourceRatioSignal } from "../signals/claimSourceRatio.signal.js";
+import { readabilityPersuasionSignal } from "../signals/readabilityPersuasion.signal.js";
 
 const POLL_INTERVAL_MS = 5000; // every 5 seconds
 
 // Map signal IDs to actual functions
 const signalFunctions = {
   structural_transparency: structuralTransparencySignal,
-  emotion_density: emotionDensitySignal
+  emotion_density: emotionDensitySignal,
+  sensational_headline: sensationalHeadlineSignal,
+  claim_source_ratio: claimSourceRatioSignal,
+  readability_persuasion: readabilityPersuasionSignal
 };
 
 export const startJobWorker = () => {

@@ -2,7 +2,16 @@ import { AnalysisJob } from "../models/AnalysisJob.js";
 import { SignalResult } from "../models/SignalResult.js";
 import { AggregatedResult } from "../models/AggregatedResult.js";
 
+import { structuralTransparencySignal } from "../signals/structuralTransparency.signal.js";
+import { emotionDensitySignal } from "../signals/emotionDensity.signal.js";
+
 const POLL_INTERVAL_MS = 5000; // every 5 seconds
+
+// Map signal IDs to actual functions
+const signalFunctions = {
+  structural_transparency: structuralTransparencySignal,
+  emotion_density: emotionDensitySignal
+};
 
 export const startJobWorker = () => {
   console.log("🛠 Job worker started");
@@ -26,31 +35,27 @@ export const startJobWorker = () => {
     }
   }, POLL_INTERVAL_MS);
 };
+
 const processJob = async (job) => {
   try {
-    const signals = [
-      "emotion_density",
-      "sensational_headline",
-      "claim_source_ratio",
-      "readability_persuasion",
-      "content_originality",
-      "ai_likeness_risk",
-      "structural_transparency"
-    ];
+    const signalIds = Object.keys(signalFunctions);
 
-    for (const signalId of signals) {
+    for (const signalId of signalIds) {
       try {
+        const result = signalFunctions[signalId](job.originalInput);
+
         await SignalResult.create({
           jobId: job._id,
           signalId,
           signalVersion: job.signalVersion,
           status: "COMPLETED",
-          value: Math.random(), // placeholder logic
-          confidence: "MEDIUM",
-          explanation: "Stub signal execution result.",
-          limitations: "This is placeholder logic.",
-          executionTimeMs: 10
+          value: result.value,
+          confidence: result.confidence,
+          explanation: result.explanation,
+          limitations: result.limitations,
+          executionTimeMs: 5
         });
+
       } catch (signalError) {
         await SignalResult.create({
           jobId: job._id,
@@ -62,6 +67,7 @@ const processJob = async (job) => {
       }
     }
 
+    // Temporary static aggregation (will replace in Block 7)
     await AggregatedResult.create({
       jobId: job._id,
       overallRiskBand: "MEDIUM",
@@ -88,4 +94,3 @@ const processJob = async (job) => {
     console.error(`❌ Job ${job._id} failed`);
   }
 };
-

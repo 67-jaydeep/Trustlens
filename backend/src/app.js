@@ -1,10 +1,12 @@
 import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
+
 import authRoutes from "./routes/auth.routes.js";
 import analysisRoutes from "./routes/analysis.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import historyRoutes from "./routes/history.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -14,17 +16,17 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api", analysisRoutes);
-app.use("/api", reportRoutes);
-app.use("/api", historyRoutes);
+app.use("/api/analysis", analysisRoutes);
+app.use("/api/report", reportRoutes);
+app.use("/api/history", historyRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-// Health check route
+// Health check
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
-
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 export default app;

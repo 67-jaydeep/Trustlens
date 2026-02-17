@@ -1,9 +1,9 @@
 import express from "express";
-import { getAnalysisReport } from "../controllers/report.controller.js";
+import { getDashboardSummary } from "../controllers/dashboard.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.get("/:jobId", authenticate, getAnalysisReport);
+router.get("/summary", authenticate, getDashboardSummary);
 
 export default router;

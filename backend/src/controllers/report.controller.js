@@ -35,6 +35,7 @@ export const getAnalysisReport = async (req, res, next) => {
         id: job._id,
         status: job.status,
         inputType: job.inputType,
+        originalInput: job.originalInput,
         createdAt: job.createdAt,
         completedAt: job.completedAt,
         meta: job.meta
